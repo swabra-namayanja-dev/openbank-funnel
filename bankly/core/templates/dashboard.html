@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+{% load dict_extras %}
+<html lang="en" class="bg-black">
+<head>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Bankly</title>
+  <style>
+    @keyframes fade-in { from {opacity:0; transform: translateY(10px)} to {opacity:1; transform: translateY(0)} }
+    .animate-fade-in { animation: fade-in 0.5s ease-out; }
+    .spinner { border: 3px solid #333; border-top: 3px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body class="text-white min-h-screen">
+
+  <nav class="p-6 flex justify-between items-center max-w-6xl mx-auto">
+    <h1 class="text-2xl font-bold">💳 Bankly</h1>
+    {% if user %}<a href="/" class="text-gray-400 hover:text-white">Logout</a>{% endif %}
+  </nav>
+
+  <div class="max-w-6xl mx-auto px-6">
+
+    {% if not user %}
+    <!-- HERO -->
+    <div class="text-center py-20">
+      <h1 class="text-6xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        All your money. One app.
+      </h1>
+      <p class="text-gray-400 mt-4">Connect your banks and see everything in one place</p>
+
+      <form method="get" class="mt-8" id="connectForm">
+        <input name="phone" value="{{request.GET.phone}}" placeholder="+256700123456"
+          class="p-3 rounded-lg bg-gray-900 border-gray-700 w-80 text-white">
+        <div class="flex gap-4 justify-center mt-6 flex-wrap">
+          {% for bank in BANK_LOGOS.keys %}
+          <a href="/connect/{{request.GET.phone}}/{{bank}}/" 
+             onclick="showSpinner()"
+             class="px-6 py-3 bg-gray-900 border border-gray-700 rounded-xl hover:scale-105 transition flex items-center gap-3">
+            <img src="{{BANK_LOGOS|get_item:bank}}" class="w-6 h-6">
+            Connect {{bank}}
+          </a>
+          {% endfor %}
+        </div>
+        <div id="loading" class="hidden justify-center mt-4"><div class="spinner"></div><span class="ml-2">Connecting...</span></div>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if user %}
+    <div class="animate-fade-in">
+      <!-- Total Balance Card -->
+      <div class="bg-gradient-to-br from-purple-600 to-blue-700 p-8 rounded-[2.5rem] shadow-2xl">
+        <p class="text-white/80">Total Balance</p>
+        <h2 class="text-5xl font-bold mt-2">UGX {{total|floatformat:0}}</h2>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        <!-- Account Cards -->
+        <div class="lg:col-span-2">
+          <h2 class="text-2xl font-bold mb-4">Your Accounts</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for bank, logo in BANK_LOGOS.items %}
+                <a href="/connect/{{request.GET.phone}}/{{bank}}/" 
+                onclick="showSpinner()"
+                class="px-4 py-3 bg-gray-900 border-gray-700 rounded-xl hover:scale-105 transition flex items-center gap-3">
+                <img src="{{logo}}" class="w-6 h-6 bg-white rounded-full p-0.5">
+                {{bank}}
+                </a>
+            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Transactions -->
+        <div>
+          <h2 class="text-2xl font-bold mb-4">Recent Activity</h2>
+          <div class="bg-gray-900 rounded-2xl p-4">
+            {% for tx in transactions %}
+            <div class="flex justify-between py-3 border-b border-gray-800">
+              <div>
+                <p class="font-semibold">{{tx.description}}</p>
+                <p class="text-gray-400 text-sm">{{tx.date}} • {{tx.category}}</p>
+              </div>
+              <p class="font-bold {% if tx.amount > 0 %}text-green-400{% else %}text-red-400{% endif %}">
+                {% if tx.amount > 0 %}+{% endif %}UGX {{tx.amount|floatformat:0}}
+              </p>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <script>
+    function showSpinner() {
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('loading').classList.add('flex');
+    }
+  </script>
+</body>
+</html>
